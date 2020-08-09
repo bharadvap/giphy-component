@@ -8,18 +8,10 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { compose } from 'redux';
-
+import _ from 'lodash';
 import Wrapper from 'components/Wrapper';
-import {
-  GiphyPickerWrapper,
-  GiphyWrapper,
-  GiphyWrapperRow,
-  GiphyColumn,
-  Giphy,
-  Input,
-  H1Tag,
-} from '../../components/GiphyComponent';
-import Picker from 'react-giphy-component';
+import GiphyComponent from '../../components/GiphyComponent/Loadable';
+import { H1Tag } from '../../components/GiphyStyleComponent';
 import injectSaga from 'utils/injectSaga';
 import injectReducer from 'utils/injectReducer';
 import makeSelectHomePage from './selectors';
@@ -46,6 +38,7 @@ export class HomePage extends React.PureComponent {
       searchValue: '',
     };
     this.fetchSearch = debounce(this.fetchSearch, 500);
+    this.onScroll = this.onScroll.bind(this);
   }
 
   componentDidMount() {
@@ -83,7 +76,6 @@ export class HomePage extends React.PureComponent {
       e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
     let currentPage = this.props.homepage.gifs.currentPage;
     let totalPages = this.props.homepage.gifs.totalPages;
-    console.log(currentPage, totalPages);
     if ((currentPage += 1 > totalPages && totalPages > 0) && bottom) {
       this.props.fetchNextTrendingGifs(
         this.state.searchValue,
@@ -100,46 +92,17 @@ export class HomePage extends React.PureComponent {
       gifs.data.map(gif => {
         return gif.images;
       });
-    const rowChunks = data && data.clone().chunk(9);
+    const rowChunks = data && _.clone(data);
     return (
       <Wrapper flexColumn>
         <H1Tag>Giphy</H1Tag>
-        <GiphyPickerWrapper className={'giphy-picker'}>
-          <Input
-            name="giphy-search"
-            type="text"
-            autoComplete="off"
-            autoCorrect="off"
-            onChange={this.onSearchChange}
-            value={this.state.searchValue}
-            onKeyDown={this.onKeyDown}
-            placeholder={'Search for GIFs'}
-          />
-          <GiphyWrapper onScroll={e => this.onScroll(e)}>
-            <GiphyWrapperRow>
-              {rowChunks &&
-                rowChunks.map((data, i) => {
-                  return (
-                    <GiphyColumn key={i}>
-                      {data.map((g, j) => {
-                        let gifUrl = g.fixed_height.url;
-                        return (
-                          <Giphy
-                            key={j}
-                            style={{
-                              width: '100%',
-                              height: Number(g.fixed_height.height),
-                            }}
-                            src={gifUrl}
-                          />
-                        );
-                      })}
-                    </GiphyColumn>
-                  );
-                })}
-            </GiphyWrapperRow>
-          </GiphyWrapper>
-        </GiphyPickerWrapper>
+        <GiphyComponent
+          searchValue={this.state.searchValue}
+          onSearchChange={this.onSearchChange}
+          onKeyDown={this.onKeyDown}
+          onScroll={this.onScroll}
+          rowChunks={_.chunk(rowChunks, 9)}
+        />
       </Wrapper>
     );
   }
